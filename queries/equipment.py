@@ -10,7 +10,7 @@ STATUS_KR = {
 }
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_model_summary() -> pd.DataFrame:
     """모델별 가용/미사용/고장/폐기/전체 수량"""
     with get_conn() as conn:
@@ -36,7 +36,7 @@ def get_model_summary() -> pd.DataFrame:
     return df
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_all_equipment() -> pd.DataFrame:
     """전체 단말 목록 (상세)"""
     with get_conn() as conn:
@@ -62,7 +62,7 @@ def get_all_equipment() -> pd.DataFrame:
     return df.drop(columns=["status"])
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_equipment_by_team() -> pd.DataFrame:
     """팀별 모델 수량"""
     with get_conn() as conn:
@@ -83,13 +83,13 @@ def get_equipment_by_team() -> pd.DataFrame:
     return df
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_equipment_by_model() -> pd.DataFrame:
     """모델별 단말 목록 + 상태"""
     return get_all_equipment()
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_models() -> pd.DataFrame:
     """모델 목록"""
     with get_conn() as conn:
@@ -98,7 +98,7 @@ def get_models() -> pd.DataFrame:
         )
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_teams() -> pd.DataFrame:
     """팀 목록"""
     with get_conn() as conn:
@@ -155,7 +155,7 @@ def remove_equipment(
     _clear_equipment_cache()
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_disposal_pending() -> pd.DataFrame:
     """폐기 대기 목록 (미사용/고장 처리됐으나 폐기 미완료)"""
     with get_conn() as conn:
@@ -183,7 +183,7 @@ def get_disposal_pending() -> pd.DataFrame:
     return df.drop(columns=["status"])
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_disposal_done() -> pd.DataFrame:
     """폐기 완료 목록"""
     with get_conn() as conn:

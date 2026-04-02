@@ -19,7 +19,7 @@ disposed = int(df["폐기"].sum())
 
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("총 단말 수", total)
-c2.metric("가용", avail, delta=f"{avail/total*100:.0f}%" if total else "0%")
+c2.metric("가용", avail)
 c3.metric("미사용", unused)
 c4.metric("고장", broken)
 c5.metric("폐기", disposed)

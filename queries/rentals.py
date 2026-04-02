@@ -4,7 +4,7 @@ import streamlit as st
 from db.database import get_conn
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_active_rentals() -> pd.DataFrame:
     """현재 대여 중인 단말 목록"""
     with get_conn() as conn:
@@ -30,7 +30,7 @@ def get_active_rentals() -> pd.DataFrame:
     return df
 
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=300)
 def get_rental_history() -> pd.DataFrame:
     """전체 대여 이력"""
     with get_conn() as conn:
