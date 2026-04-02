@@ -208,10 +208,30 @@ def get_disposal_done() -> pd.DataFrame:
 
 
 def dispose_equipment(equipment_id: int):
-    """폐기 처리 → DB에서 완전 삭제"""
+    """폐기 처리 → disposed=1 마킹"""
     with get_conn() as conn:
         conn.execute("DELETE FROM rentals WHERE equipment_id=?", (equipment_id,))
-        conn.execute("DELETE FROM equipment WHERE id=?", (equipment_id,))
+        conn.execute(
+            "UPDATE equipment"
+            " SET disposed=1,"
+            " disposed_at=datetime('now','localtime')"
+            " WHERE id=?",
+            (equipment_id,),
+        )
+    get_disposal_pending.clear()
+    get_disposal_done.clear()
+    _clear_equipment_cache()
+
+
+def restore_equipment(equipment_id: int):
+    """폐기 완료 → 폐기 대기로 원복"""
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE equipment"
+            " SET disposed=0, disposed_at=NULL"
+            " WHERE id=?",
+            (equipment_id,),
+        )
     get_disposal_pending.clear()
     get_disposal_done.clear()
     _clear_equipment_cache()

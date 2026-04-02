@@ -1,5 +1,8 @@
 import streamlit as st
-from queries.equipment import get_disposal_pending, get_disposal_done, dispose_equipment
+from queries.equipment import (
+    get_disposal_pending, get_disposal_done,
+    dispose_equipment, restore_equipment,
+)
 
 st.title("🗑️ 폐기 현황")
 
@@ -48,8 +51,22 @@ if done_df.empty:
     st.info("폐기 완료된 단말이 없습니다.")
 else:
     st.caption(f"총 {len(done_df)}개")
-    st.dataframe(
-        done_df[["모델", "등록번호", "시리얼번호", "비고", "폐기일시"]],
+
+    display_done = done_df[["모델", "등록번호", "시리얼번호", "비고", "폐기일시"]].copy()
+    display_done.insert(0, "원복", False)
+
+    edited_done = st.data_editor(
+        display_done,
         width='stretch',
         hide_index=True,
+        column_config={
+            "원복": st.column_config.CheckboxColumn("원복", width="small"),
+        },
+        disabled=["모델", "등록번호", "시리얼번호", "비고", "폐기일시"],
     )
+
+    restore_checked = edited_done[edited_done["원복"]].index.tolist()
+    if restore_checked and st.button("원복 처리", type="secondary"):
+        for idx in restore_checked:
+            restore_equipment(int(done_df.iloc[idx]["id"]))
+        st.rerun()
