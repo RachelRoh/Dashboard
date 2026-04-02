@@ -6,26 +6,26 @@ from db.database import get_conn
 STATUS_KR = {
     "available": "가용",
     "broken": "고장",
-    "retired": "폐기",
+    "retired": "미사용",
 }
 
 
 @st.cache_data(ttl=30)
 def get_model_summary() -> pd.DataFrame:
-    """모델별 전체/가용/폐기 예정/폐기 완료 수량"""
+    """모델별 가용/미사용/고장/폐기/전체 수량"""
     with get_conn() as conn:
         df = pd.read_sql(
             """
             SELECT
                 m.name AS 모델,
                 COUNT(*) AS 전체,
-                SUM(e.status = 'available') AS 가용,
-                SUM(e.status = 'broken') AS 고장,
-                SUM(
-                    e.status IN ('broken','retired')
-                    AND (e.disposed IS NULL OR e.disposed = 0)
-                ) AS 폐기예정,
-                SUM(e.disposed = 1) AS 폐기완료
+                SUM(e.status = 'available'
+                    AND (e.disposed IS NULL OR e.disposed = 0)) AS 가용,
+                SUM(e.status = 'retired'
+                    AND (e.disposed IS NULL OR e.disposed = 0)) AS 미사용,
+                SUM(e.status = 'broken'
+                    AND (e.disposed IS NULL OR e.disposed = 0)) AS 고장,
+                SUM(e.disposed = 1) AS 폐기
             FROM equipment e
             JOIN models m ON e.model_id = m.id
             GROUP BY m.id
@@ -33,7 +33,6 @@ def get_model_summary() -> pd.DataFrame:
             """,
             conn,
         )
-    df = df.rename(columns={"폐기예정": "폐기 예정", "폐기완료": "폐기 완료"})
     return df
 
 

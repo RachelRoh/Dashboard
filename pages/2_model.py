@@ -27,7 +27,14 @@ for tab, model in zip(tabs, models):
         c2.metric("가용", int(row["가용"]))
         c3.metric("고장", int(row["고장"]))
 
-        model_df = all_df[all_df["모델"] == model].reset_index(drop=True)
+        status_order = {"가용": 0, "미사용": 1, "고장": 2, "폐기": 3}
+        model_df = (
+            all_df[all_df["모델"] == model]
+            .assign(상태순서=lambda d: d["상태"].map(status_order))
+            .sort_values(["상태순서", "시리얼번호"])
+            .drop(columns="상태순서")
+            .reset_index(drop=True)
+        )
         st.dataframe(
             model_df[["시리얼번호", "상태", "보유팀", "비고", "최종수정"]],
             width='stretch',
