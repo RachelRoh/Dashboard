@@ -1,3 +1,5 @@
+import io
+import pandas as pd
 import streamlit as st
 from queries.equipment import (
     get_equipment_by_team, get_all_equipment,
@@ -102,6 +104,45 @@ for tab, team in zip(tabs, teams):
                     f" ({serial_no or '시리얼 없음'}) — {team}"
                 )
                 st.rerun()
+
+        # ── CSV 일괄 추가 ────────────────────────────────────
+        with st.expander("➕ CSV로 일괄 추가", expanded=False):
+            st.caption("모델, 등록번호, 시리얼번호, 비고 컬럼을 포함한 CSV 파일을 업로드하세요.")
+            uploaded = st.file_uploader(
+                "CSV 파일 선택", type="csv", key=f"csv_{team}"
+            )
+            if uploaded:
+                try:
+                    csv_df = pd.read_csv(io.BytesIO(uploaded.read()))
+                    required = {"모델"}
+                    if not required.issubset(csv_df.columns):
+                        st.error("CSV에 '모델' 컬럼이 없습니다.")
+                    else:
+                        csv_df = csv_df.fillna("")
+                        invalid = csv_df[~csv_df["모델"].isin(model_map.keys())]
+                        if not invalid.empty:
+                            st.warning(
+                                f"알 수 없는 모델명이 있어 제외됩니다: "
+                                f"{invalid['모델'].unique().tolist()}"
+                            )
+                        valid_df = csv_df[csv_df["모델"].isin(model_map.keys())]
+                        st.dataframe(valid_df, hide_index=True, width="stretch")
+                        if not valid_df.empty and st.button(
+                            "일괄 추가", type="primary", key=f"csv_submit_{team}"
+                        ):
+                            for _, r in valid_df.iterrows():
+                                add_equipment(
+                                    model_id=model_map[r["모델"]],
+                                    serial_no=str(r.get("시리얼번호", "")).strip() or None,
+                                    status="available",
+                                    team_id=team_id_map[team],
+                                    notes=str(r.get("비고", "")).strip(),
+                                    reg_no=str(r.get("등록번호", "")).strip(),
+                                )
+                            st.success(f"{len(valid_df)}개 단말 추가 완료")
+                            st.rerun()
+                except Exception as e:
+                    st.error(f"CSV 읽기 오류: {e}")
 
         # ── 단말 삭제 ───────────────────────────────────────
         with st.expander("🗑️ 단말 삭제", expanded=False):
