@@ -1,8 +1,7 @@
 import streamlit as st
 from queries.equipment import get_model_summary, get_all_equipment
 
-st.set_page_config(page_title="모델별 현황", page_icon="📋", layout="wide")
-st.title("📋 모델별 현황")
+st.title("📱 모델별 현황")
 
 if st.button("🔄 새로고침"):
     get_model_summary.clear()

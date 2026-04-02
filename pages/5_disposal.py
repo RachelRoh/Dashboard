@@ -1,7 +1,6 @@
 import streamlit as st
 from queries.equipment import get_disposal_pending, get_disposal_done, dispose_equipment
 
-st.set_page_config(page_title="폐기 현황", page_icon="🗑️", layout="wide")
 st.title("🗑️ 폐기 현황")
 
 if st.button("🔄 새로고침"):

@@ -2,7 +2,6 @@ import streamlit as st
 from queries.equipment import get_model_summary
 from components.charts import pie_model_total
 
-st.set_page_config(page_title="단말 현황 요약", page_icon="📊", layout="wide")
 st.title("📊 단말 현황 요약")
 
 if st.button("🔄 새로고침"):

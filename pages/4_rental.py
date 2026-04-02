@@ -7,8 +7,7 @@ from queries.rentals import (
 from queries.equipment import get_all_equipment
 from db.database import get_conn
 
-st.set_page_config(page_title="대여 현황", page_icon="🔑", layout="wide")
-st.title("🔑 대여 현황")
+st.title("📒 대여 현황")
 
 tab_active, tab_history, tab_new = st.tabs(["대여 중", "대여 이력", "대여 등록"])
 

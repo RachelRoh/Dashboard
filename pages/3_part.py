@@ -9,7 +9,6 @@ STATUS_KR = {"available": "가용", "broken": "고장", "retired": "폐기"}
 STATUS_EN = {v: k for k, v in STATUS_KR.items()}
 REMOVE_REASONS = ["이관", "미사용", "고장"]
 
-st.set_page_config(page_title="파트별 현황", page_icon="👥", layout="wide")
 st.title("👥 파트별 현황")
 
 
