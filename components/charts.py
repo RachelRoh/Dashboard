@@ -15,7 +15,7 @@ def pie_model_total(df: pd.DataFrame):
         df,
         names="모델",
         values="전체",
-        color_discrete_sequence=px.colors.qualitative.Set3,
+        color_discrete_sequence=["#FFCDD2", "#C8E6C9", "#BBDEFB", "#FFF9C4", "#E1BEE7", "#B2EBF2"],
         hole=0.35,
     )
     fig.update_traces(textposition="inside", textinfo="percent+label")
