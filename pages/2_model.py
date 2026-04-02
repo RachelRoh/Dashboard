@@ -24,10 +24,15 @@ for tab, model in zip(tabs, models):
     with tab:
         row = summary_df[summary_df["모델"] == model].iloc[0]
 
-        c1, c2, c3 = st.columns(3)
-        c1.metric("전체", int(row["전체"]))
-        c2.metric("가용", int(row["가용"]))
+        c1, c2, c3, c4 = st.columns(4)
+        c1.markdown(
+            "<p style='font-size:.875rem;margin-bottom:0'>가용</p>"
+            f"<p style='font-size:2rem;font-weight:700;color:#FF4B4B;margin:0'>{int(row['가용'])}</p>",
+            unsafe_allow_html=True,
+        )
+        c2.metric("미사용", int(row["미사용"]))
         c3.metric("고장", int(row["고장"]))
+        c4.metric("폐기", int(row["폐기"]))
 
         status_order = {"가용": 0, "미사용": 1, "고장": 2, "폐기": 3}
         model_df = (

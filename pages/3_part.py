@@ -55,10 +55,20 @@ for tab, team in zip(tabs, teams):
             pending_df[pending_df["팀"] == team].reset_index(drop=True)
         )
 
-        c1, c2, c3 = st.columns(3)
-        c1.metric("전체", len(team_all))
-        c2.metric("가용", len(team_detail))
-        c3.metric("폐기 예정", len(team_pending))
+        cnt_avail   = len(team_all[team_all["상태"] == "가용"])
+        cnt_unused  = len(team_pending[team_pending["사유"] == "미사용"])
+        cnt_broken  = len(team_pending[team_pending["사유"] == "고장"])
+        cnt_disposed = len(team_all) - cnt_avail - cnt_unused - cnt_broken
+
+        c1, c2, c3, c4 = st.columns(4)
+        c1.markdown(
+            "<p style='font-size:.875rem;margin-bottom:0'>가용</p>"
+            f"<p style='font-size:2rem;font-weight:700;color:#FF4B4B;margin:0'>{cnt_avail}</p>",
+            unsafe_allow_html=True,
+        )
+        c2.metric("미사용", cnt_unused)
+        c3.metric("고장", cnt_broken)
+        c4.metric("폐기", cnt_disposed)
 
         st.dataframe(
             team_detail[["모델", "등록번호", "시리얼번호", "비고"]],
