@@ -4,12 +4,14 @@ from queries.equipment import (
     dispose_equipment, restore_equipment,
 )
 
-st.title("🗑️ 폐기 현황")
+_, _btn_col = st.columns([8, 2])
+with _btn_col:
+    if st.button("새로 고침"):
+        get_disposal_pending.clear()
+        get_disposal_done.clear()
+        st.rerun()
 
-if st.button("🔄 새로고침"):
-    get_disposal_pending.clear()
-    get_disposal_done.clear()
-    st.rerun()
+st.title("🗑️ 폐기 현황")
 
 # ── 폐기 대기 목록 ──────────────────────────────────────────
 st.subheader("폐기 대기 목록")

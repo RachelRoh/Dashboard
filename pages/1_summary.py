@@ -2,11 +2,13 @@ import streamlit as st
 from queries.equipment import get_model_summary
 from components.charts import pie_model_total
 
-st.title("📊 단말 현황 요약")
+_, _btn_col = st.columns([8, 2])
+with _btn_col:
+    if st.button("새로 고침"):
+        get_model_summary.clear()
+        st.rerun()
 
-if st.button("🔄 새로고침"):
-    get_model_summary.clear()
-    st.rerun()
+st.title("📊 단말 현황 요약")
 
 df = get_model_summary()
 

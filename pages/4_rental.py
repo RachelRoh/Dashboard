@@ -7,15 +7,19 @@ from queries.rentals import (
 from queries.equipment import get_all_equipment
 from db.database import get_conn
 
+_, _btn_col = st.columns([8, 2])
+with _btn_col:
+    if st.button("새로 고침"):
+        get_active_rentals.clear()
+        get_rental_history.clear()
+        st.rerun()
+
 st.title("📒 대여 현황")
 
 tab_active, tab_history, tab_new = st.tabs(["대여 중", "대여 이력", "대여 등록"])
 
 # ── 대여 중 목록 ────────────────────────────────────────────
 with tab_active:
-    if st.button("🔄 새로고침", key="refresh_active"):
-        get_active_rentals.clear()
-        st.rerun()
 
     active_df = get_active_rentals()
 
@@ -61,10 +65,6 @@ with tab_active:
 
 # ── 대여 이력 ───────────────────────────────────────────────
 with tab_history:
-    if st.button("🔄 새로고침", key="refresh_history"):
-        get_rental_history.clear()
-        st.rerun()
-
     hist_df = get_rental_history()
 
     if hist_df.empty:

@@ -9,9 +9,6 @@ STATUS_KR = {"available": "가용", "broken": "고장", "retired": "폐기"}
 STATUS_EN = {v: k for k, v in STATUS_KR.items()}
 REMOVE_REASONS = ["이관", "미사용", "고장"]
 
-st.title("👥 파트별 현황")
-
-
 @st.dialog("삭제 완료!")
 def _show_delete_done():
     st.write(st.session_state.get("_del_done_msg", ""))
@@ -24,12 +21,15 @@ def _show_delete_done():
 if "_del_done_msg" in st.session_state:
     _show_delete_done()
 
+_, _btn_col = st.columns([8, 2])
+with _btn_col:
+    if st.button("새로 고침"):
+        get_equipment_by_team.clear()
+        get_all_equipment.clear()
+        get_disposal_pending.clear()
+        st.rerun()
 
-if st.button("🔄 새로고침"):
-    get_equipment_by_team.clear()
-    get_all_equipment.clear()
-    get_disposal_pending.clear()
-    st.rerun()
+st.title("👥 파트별 현황")
 
 team_df = get_equipment_by_team()
 all_df = get_all_equipment()
@@ -51,7 +51,9 @@ for tab, team in zip(tabs, teams):
         # 가용 단말만 메인 목록에 표시
         team_all = all_df[all_df["보유팀"] == team].reset_index(drop=True)
         team_detail = team_all[team_all["상태"] == "가용"].reset_index(drop=True)
-        team_pending = pending_df[pending_df["팀"] == team].reset_index(drop=True)
+        team_pending = (
+            pending_df[pending_df["팀"] == team].reset_index(drop=True)
+        )
 
         c1, c2, c3 = st.columns(3)
         c1.metric("전체", len(team_all))

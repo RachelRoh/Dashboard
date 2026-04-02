@@ -10,6 +10,7 @@ st.set_page_config(
 
 ensure_db()
 
+
 pg = st.navigation([
     st.Page("home.py",                       title="페이지 안내",   icon="📖"),
     st.Page("pages/1_summary.py",            title="단말 현황 요약", icon="📊"),

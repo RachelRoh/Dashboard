@@ -1,12 +1,14 @@
 import streamlit as st
 from queries.equipment import get_model_summary, get_all_equipment
 
-st.title("📱 모델별 현황")
+_, _btn_col = st.columns([8, 2])
+with _btn_col:
+    if st.button("새로 고침"):
+        get_model_summary.clear()
+        get_all_equipment.clear()
+        st.rerun()
 
-if st.button("🔄 새로고침"):
-    get_model_summary.clear()
-    get_all_equipment.clear()
-    st.rerun()
+st.title("📱 모델별 현황")
 
 summary_df = get_model_summary()
 all_df = get_all_equipment()
