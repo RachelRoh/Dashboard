@@ -42,12 +42,33 @@ for tab, model in zip(tabs, models):
             .drop(columns="상태순서")
             .reset_index(drop=True)
         )
+        model_active = model_df[model_df["disposed"] == 0]
+        fc1, fc2, fc3 = st.columns(3)
+        team_opts = ["전체"] + sorted(model_active["보유팀"].dropna().unique().tolist())
+        team_filter = fc1.selectbox(
+            "소유팀", team_opts, key=f"filter_team_{model}",
+        )
+        owner_opts = ["전체"] + sorted(model_active["소유자"].dropna().unique().tolist())
+        owner_filter = fc2.selectbox(
+            "소유자", owner_opts, key=f"filter_owner_{model}",
+        )
+        status_filter = fc3.selectbox(
+            "상태", ["가용", "고장", "미사용", "전체"],
+            index=0, key=f"filter_status_{model}",
+        )
+        filtered_df = model_active.copy()
+        if status_filter != "전체":
+            filtered_df = filtered_df[filtered_df["상태"] == status_filter]
+        if team_filter != "전체":
+            filtered_df = filtered_df[filtered_df["보유팀"] == team_filter]
+        if owner_filter != "전체":
+            filtered_df = filtered_df[filtered_df["소유자"] == owner_filter]
         _cols = ["시리얼번호", "상태", "보유팀", "소유자", "등록일시", "비고"]
-        _disp = model_df[_cols].copy()
+        _disp = filtered_df[_cols].copy()
         _disp["등록일"] = _disp["등록일시"].str[:10]
         _disp = _disp.rename(columns={"보유팀": "소유팀"})
         st.dataframe(
-            _disp[["시리얼번호", "상태", "소유팀", "소유자", "등록일", "비고"]],
+            _disp[["시리얼번호", "소유팀", "소유자", "비고", "상태", "등록일"]],
             width='stretch',
             hide_index=True,
         )

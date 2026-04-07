@@ -73,10 +73,30 @@ for tab, team in zip(tabs, teams):
         c3.metric("고장", cnt_broken)
         c4.metric("폐기", cnt_disposed)
 
-        _disp = team_active[["모델", "시리얼번호", "상태", "소유자", "등록일시", "비고"]].copy()
+        fc1, fc2, fc3 = st.columns(3)
+        model_opts = ["전체"] + sorted(team_active["모델"].dropna().unique().tolist())
+        model_filter = fc1.selectbox(
+            "모델", model_opts, key=f"filter_model_{team}",
+        )
+        owner_opts = ["전체"] + sorted(team_active["소유자"].dropna().unique().tolist())
+        owner_filter = fc2.selectbox(
+            "소유자", owner_opts, key=f"filter_owner_{team}",
+        )
+        status_filter = fc3.selectbox(
+            "상태", ["가용", "고장", "미사용", "전체"],
+            index=0, key=f"filter_status_{team}",
+        )
+        filtered_active = team_active.copy()
+        if model_filter != "전체":
+            filtered_active = filtered_active[filtered_active["모델"] == model_filter]
+        if status_filter != "전체":
+            filtered_active = filtered_active[filtered_active["상태"] == status_filter]
+        if owner_filter != "전체":
+            filtered_active = filtered_active[filtered_active["소유자"] == owner_filter]
+        _disp = filtered_active[["모델", "시리얼번호", "상태", "소유자", "등록일시", "비고"]].copy()
         _disp["등록일"] = _disp["등록일시"].str[:10]
         st.dataframe(
-            _disp[["모델", "시리얼번호", "상태", "소유자", "등록일", "비고"]],
+            _disp[["모델", "시리얼번호", "소유자", "비고", "상태", "등록일"]],
             width='stretch',
             hide_index=True,
         )
