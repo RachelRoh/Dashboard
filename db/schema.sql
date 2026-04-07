@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS equipment (
                    CHECK(status IN ('available','broken','retired')),
     team_id    INTEGER REFERENCES teams(id),
     reg_no      TEXT DEFAULT '',
+    owner       TEXT DEFAULT '',
+    registered_at TEXT DEFAULT (datetime('now','localtime')),
     notes       TEXT DEFAULT '',
     disposed    INTEGER DEFAULT 0,
     disposed_at TEXT,

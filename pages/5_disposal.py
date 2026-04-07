@@ -23,7 +23,7 @@ if pending_df.empty:
 else:
     st.caption(f"총 {len(pending_df)}개")
 
-    display = pending_df[["모델", "등록번호", "시리얼번호", "사유", "비고", "처리일시"]].copy()
+    display = pending_df[["모델", "시리얼번호", "소유자", "사유", "비고", "처리일시"]].copy()
     display.insert(0, "폐기", False)
 
     edited = st.data_editor(
@@ -33,7 +33,7 @@ else:
         column_config={
             "폐기": st.column_config.CheckboxColumn("폐기", width="small"),
         },
-        disabled=["모델", "등록번호", "시리얼번호", "사유", "비고", "처리일시"],
+        disabled=["모델", "시리얼번호", "소유자", "사유", "비고", "처리일시"],
     )
 
     checked = edited[edited["폐기"]].index.tolist()
@@ -54,7 +54,7 @@ if done_df.empty:
 else:
     st.caption(f"총 {len(done_df)}개")
 
-    display_done = done_df[["모델", "등록번호", "시리얼번호", "비고", "폐기일시"]].copy()
+    display_done = done_df[["모델", "시리얼번호", "소유자", "비고", "폐기일시"]].copy()
     display_done.insert(0, "원복", False)
 
     edited_done = st.data_editor(
@@ -64,7 +64,7 @@ else:
         column_config={
             "원복": st.column_config.CheckboxColumn("원복", width="small"),
         },
-        disabled=["모델", "등록번호", "시리얼번호", "비고", "폐기일시"],
+        disabled=["모델", "시리얼번호", "소유자", "비고", "폐기일시"],
     )
 
     restore_checked = edited_done[edited_done["원복"]].index.tolist()

@@ -35,29 +35,29 @@ def init():
     team_ids = {r[1]: r[0] for r in cur.execute("SELECT id, name FROM teams")}
 
     equipment = [
-        # (model_name, reg_no, serial_no, status, team_name)
-        ("Galaxy S24", "REG-001", "SN-S24-001", "available", "Alpha팀"),
-        ("Galaxy S24", "REG-002", "SN-S24-002", "available", "Alpha팀"),
-        ("Galaxy S24", "REG-003", "SN-S24-003", "available", "Beta팀"),
-        ("Galaxy S24 Ultra", "REG-004", "SN-S24U-001", "available", "Beta팀"),
-        ("Galaxy S24 Ultra", "REG-005", "SN-S24U-002", "broken", "Beta팀"),
-        ("Pixel 9 Pro", "REG-006", "SN-PX9-001", "available", "Gamma팀"),
-        ("Pixel 9 Pro", "REG-007", "SN-PX9-002", "available", "Gamma팀"),
-        ("Pixel 9 Pro", "REG-008", "SN-PX9-003", "available", "Alpha팀"),
-        ("iPhone 16", "REG-009", "SN-IP16-001", "available", "Delta팀"),
-        ("iPhone 16", "REG-010", "SN-IP16-002", "available", "Delta팀"),
-        ("iPhone 16", "REG-011", "SN-IP16-003", "available", "Alpha팀"),
-        ("iPhone 16 Pro", "REG-012", "SN-IP16P-001", "available", "Beta팀"),
-        ("iPhone 16 Pro", "REG-013", "SN-IP16P-002", "available", "Gamma팀"),
-        ("iPad Pro 13", "REG-014", "SN-IPAD-001", "available", "Delta팀"),
-        ("iPad Pro 13", "REG-015", "SN-IPAD-002", "available", "Gamma팀"),
+        # (model_name, serial_no, owner, registered_at, status, team_name)
+        ("Galaxy S24", "SN-S24-001", "홍길동", "2025-01-10", "available", "Alpha팀"),
+        ("Galaxy S24", "SN-S24-002", "이순신", "2025-01-11", "available", "Alpha팀"),
+        ("Galaxy S24", "SN-S24-003", "강감찬", "2025-01-12", "available", "Beta팀"),
+        ("Galaxy S24 Ultra", "SN-S24U-001", "유관순", "2025-02-01", "available", "Beta팀"),
+        ("Galaxy S24 Ultra", "SN-S24U-002", "김유신", "2025-02-02", "broken", "Beta팀"),
+        ("Pixel 9 Pro", "SN-PX9-001", "세종대왕", "2025-03-05", "available", "Gamma팀"),
+        ("Pixel 9 Pro", "SN-PX9-002", "을지문덕", "2025-03-06", "available", "Gamma팀"),
+        ("Pixel 9 Pro", "SN-PX9-003", "장보고", "2025-03-07", "available", "Alpha팀"),
+        ("iPhone 16", "SN-IP16-001", "신사임당", "2025-04-01", "available", "Delta팀"),
+        ("iPhone 16", "SN-IP16-002", "이황", "2025-04-02", "available", "Delta팀"),
+        ("iPhone 16", "SN-IP16-003", "이이", "2025-04-03", "available", "Alpha팀"),
+        ("iPhone 16 Pro", "SN-IP16P-001", "정약용", "2025-05-10", "available", "Beta팀"),
+        ("iPhone 16 Pro", "SN-IP16P-002", "김정호", "2025-05-11", "available", "Gamma팀"),
+        ("iPad Pro 13", "SN-IPAD-001", "허준", "2025-06-01", "available", "Delta팀"),
+        ("iPad Pro 13", "SN-IPAD-002", "최무선", "2025-06-02", "available", "Gamma팀"),
     ]
     conn.executemany(
         "INSERT OR IGNORE INTO equipment"
-        "(model_id, reg_no, serial_no, status, team_id) VALUES(?,?,?,?,?)",
+        "(model_id, serial_no, owner, registered_at, status, team_id) VALUES(?,?,?,?,?,?)",
         [
-            (model_ids[m], reg, sn, status, team_ids[t])
-            for m, reg, sn, status, t in equipment
+            (model_ids[m], sn, owner, reg_dt, status, team_ids[t])
+            for m, sn, owner, reg_dt, status, t in equipment
         ],
     )
 

@@ -1,3 +1,4 @@
+import datetime
 import io
 import pandas as pd
 import streamlit as st
@@ -50,8 +51,8 @@ tabs = st.tabs(teams)
 
 for tab, team in zip(tabs, teams):
     with tab:
-        # 가용 단말만 메인 목록에 표시
         team_all = all_df[all_df["보유팀"] == team].reset_index(drop=True)
+        team_active = team_all[team_all["disposed"] == 0].reset_index(drop=True)
         team_detail = team_all[team_all["상태"] == "가용"].reset_index(drop=True)
         team_pending = (
             pending_df[pending_df["팀"] == team].reset_index(drop=True)
@@ -72,8 +73,10 @@ for tab, team in zip(tabs, teams):
         c3.metric("고장", cnt_broken)
         c4.metric("폐기", cnt_disposed)
 
+        _disp = team_active[["모델", "시리얼번호", "상태", "소유자", "등록일시", "비고"]].copy()
+        _disp["등록일"] = _disp["등록일시"].str[:10]
         st.dataframe(
-            team_detail[["모델", "등록번호", "시리얼번호", "비고"]],
+            _disp[["모델", "시리얼번호", "상태", "소유자", "등록일", "비고"]],
             width='stretch',
             hide_index=True,
         )
@@ -84,10 +87,14 @@ for tab, team in zip(tabs, teams):
                 sel_model = st.selectbox("모델 *", list(model_map.keys()))
                 col1, col2 = st.columns(2)
                 with col1:
-                    reg_no = st.text_input("등록 번호")
+                    serial_no = st.text_input("시리얼 넘버")
                 with col2:
-                    serial_no = st.text_input("시리얼 번호")
-                notes = st.text_input("비고")
+                    owner = st.text_input("소유자")
+                col3, col4 = st.columns(2)
+                with col3:
+                    registered_at = st.date_input("등록일시", value=datetime.date.today())
+                with col4:
+                    notes = st.text_input("비고")
                 submitted = st.form_submit_button("추가", type="primary")
 
             if submitted:
@@ -96,8 +103,9 @@ for tab, team in zip(tabs, teams):
                     serial_no=serial_no.strip(),
                     status="available",
                     team_id=team_id_map[team],
+                    owner=owner.strip(),
+                    registered_at=registered_at.isoformat(),
                     notes=notes.strip(),
-                    reg_no=reg_no.strip(),
                 )
                 st.success(
                     f"단말 추가 완료: {sel_model}"
@@ -107,7 +115,7 @@ for tab, team in zip(tabs, teams):
 
         # ── CSV 일괄 추가 ────────────────────────────────────
         with st.expander("➕ CSV로 일괄 추가", expanded=False):
-            st.caption("모델, 등록번호, 시리얼번호, 비고 컬럼을 포함한 CSV 파일을 업로드하세요.")
+            st.caption("모델, 시리얼번호, 소유자, 등록일시, 비고 컬럼을 포함한 CSV 파일을 업로드하세요.")
             uploaded = st.file_uploader(
                 "CSV 파일 선택", type="csv", key=f"csv_{team}"
             )
@@ -136,8 +144,9 @@ for tab, team in zip(tabs, teams):
                                     serial_no=str(r.get("시리얼번호", "")).strip() or None,
                                     status="available",
                                     team_id=team_id_map[team],
+                                    owner=str(r.get("소유자", "")).strip(),
+                                    registered_at=str(r.get("등록일시", "")).strip(),
                                     notes=str(r.get("비고", "")).strip(),
-                                    reg_no=str(r.get("등록번호", "")).strip(),
                                 )
                             st.success(f"{len(valid_df)}개 단말 추가 완료")
                             st.rerun()
@@ -203,7 +212,7 @@ for tab, team in zip(tabs, teams):
                 st.info("폐기 예정인 단말이 없습니다.")
             else:
                 st.dataframe(
-                    team_pending[["모델", "등록번호", "시리얼번호", "사유", "비고", "처리일시"]],
+                    team_pending[["모델", "시리얼번호", "소유자", "사유", "비고", "처리일시"]],
                     width='stretch',
                     hide_index=True,
                 )

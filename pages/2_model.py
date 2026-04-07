@@ -42,8 +42,12 @@ for tab, model in zip(tabs, models):
             .drop(columns="상태순서")
             .reset_index(drop=True)
         )
+        _cols = ["시리얼번호", "상태", "보유팀", "소유자", "등록일시", "비고"]
+        _disp = model_df[_cols].copy()
+        _disp["등록일"] = _disp["등록일시"].str[:10]
+        _disp = _disp.rename(columns={"보유팀": "소유팀"})
         st.dataframe(
-            model_df[["시리얼번호", "상태", "보유팀", "비고", "최종수정"]],
+            _disp[["시리얼번호", "상태", "소유팀", "소유자", "등록일", "비고"]],
             width='stretch',
             hide_index=True,
         )

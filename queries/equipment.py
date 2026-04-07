@@ -1,3 +1,4 @@
+import datetime
 import pandas as pd
 import streamlit as st
 
@@ -44,13 +45,15 @@ def get_all_equipment() -> pd.DataFrame:
             """
             SELECT
                 e.id,
-                m.name       AS 모델,
-                e.reg_no     AS 등록번호,
-                e.serial_no  AS 시리얼번호,
+                m.name          AS 모델,
+                e.serial_no     AS 시리얼번호,
+                e.owner         AS 소유자,
+                e.registered_at AS 등록일시,
                 e.status,
-                t.name       AS 보유팀,
-                e.notes      AS 비고,
-                e.updated_at AS 최종수정
+                e.disposed,
+                t.name          AS 보유팀,
+                e.notes         AS 비고,
+                e.updated_at    AS 최종수정
             FROM equipment e
             JOIN models m ON e.model_id = m.id
             LEFT JOIN teams t ON e.team_id = t.id
@@ -107,14 +110,18 @@ def get_teams() -> pd.DataFrame:
 
 def add_equipment(
     model_id: int, serial_no: str, status: str,
-    team_id: int, notes: str, reg_no: str = "",
+    team_id: int, notes: str = "", owner: str = "", registered_at: str = "",
 ):
+    if not registered_at:
+        registered_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with get_conn() as conn:
         conn.execute(
             "INSERT INTO equipment"
-            "(model_id, serial_no, status, team_id, notes, reg_no)"
-            " VALUES(?,?,?,?,?,?)",
-            (model_id, serial_no or None, status, team_id, notes, reg_no),
+            "(model_id, serial_no, status, team_id,"
+            " notes, owner, registered_at)"
+            " VALUES(?,?,?,?,?,?,?)",
+            (model_id, serial_no or None, status, team_id,
+             notes, owner, registered_at),
         )
     _clear_equipment_cache()
 
@@ -163,13 +170,13 @@ def get_disposal_pending() -> pd.DataFrame:
             """
             SELECT
                 e.id,
-                m.name      AS 모델,
-                e.reg_no    AS 등록번호,
-                e.serial_no AS 시리얼번호,
+                m.name          AS 모델,
+                e.serial_no     AS 시리얼번호,
+                e.owner         AS 소유자,
                 e.status,
-                t.name      AS 팀,
-                e.notes     AS 비고,
-                e.updated_at AS 처리일시
+                t.name          AS 팀,
+                e.notes         AS 비고,
+                e.updated_at    AS 처리일시
             FROM equipment e
             JOIN models m ON e.model_id = m.id
             LEFT JOIN teams t ON e.team_id = t.id
@@ -192,8 +199,8 @@ def get_disposal_done() -> pd.DataFrame:
             SELECT
                 e.id,
                 m.name      AS 모델,
-                e.reg_no    AS 등록번호,
                 e.serial_no AS 시리얼번호,
+                e.owner     AS 소유자,
                 e.notes     AS 비고,
                 e.disposed_at AS 폐기일시
             FROM equipment e
@@ -209,7 +216,9 @@ def get_disposal_done() -> pd.DataFrame:
 def dispose_equipment(equipment_id: int):
     """폐기 처리 → disposed=1 마킹"""
     with get_conn() as conn:
-        conn.execute("DELETE FROM rentals WHERE equipment_id=?", (equipment_id,))
+        conn.execute(
+            "DELETE FROM rentals WHERE equipment_id=?", (equipment_id,)
+        )
         conn.execute(
             "UPDATE equipment"
             " SET disposed=1,"
