@@ -35,8 +35,9 @@ with tab_active:
             return [""] * len(row)
 
         st.markdown(f"**총 {len(active_df)}건** (🔴 : 반납 연체)")
+        display_cols = ["모델", "시리얼번호", "대여팀", "대여자", "대여일시", "반납예정일"]
         st.dataframe(
-            active_df.style.apply(highlight_overdue, axis=1),
+            active_df[display_cols].style.apply(highlight_overdue, axis=1),
             width='stretch',
             hide_index=True,
         )
@@ -44,7 +45,7 @@ with tab_active:
         st.divider()
         st.subheader("반납 처리")
         labels = [
-            f"[{r['대여ID']}] {r['모델']} ({r['시리얼번호']}) - {r['대여자']}"
+            f"{r['모델']} ({r['시리얼번호']}) - {r['대여자']}"
             for _, r in active_df.iterrows()
         ]
         selected_label = st.selectbox("반납할 단말 선택", labels)
@@ -75,7 +76,8 @@ with tab_history:
         if sel_team != "전체":
             hist_df = hist_df[hist_df["대여팀"] == sel_team]
 
-        st.dataframe(hist_df, width='stretch', hide_index=True)
+        hist_cols = ["모델", "시리얼번호", "대여팀", "대여자", "대여일시", "반납예정일", "반납일시"]
+        st.dataframe(hist_df[hist_cols], width='stretch', hide_index=True)
 
 # ── 대여 등록 ───────────────────────────────────────────────
 with tab_new:
