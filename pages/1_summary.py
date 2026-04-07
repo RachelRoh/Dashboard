@@ -21,7 +21,11 @@ disposed = int(df["폐기"].sum())
 
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("총 단말 수", total)
-c2.metric("가용", avail)
+c2.markdown(
+    "<p style='font-size:.875rem;margin-bottom:0'>가용</p>"
+    f"<p style='font-size:2rem;font-weight:700;color:#FF4B4B;margin:0'>{avail}</p>",
+    unsafe_allow_html=True,
+)
 c3.metric("미사용", unused)
 c4.metric("고장", broken)
 c5.metric("폐기", disposed)
