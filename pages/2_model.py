@@ -24,15 +24,16 @@ for tab, model in zip(tabs, models):
     with tab:
         row = summary_df[summary_df["모델"] == model].iloc[0]
 
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns(5)
         c1.markdown(
             "<p style='font-size:.875rem;margin-bottom:0'>가용</p>"
             f"<p style='font-size:2rem;font-weight:700;color:#FF4B4B;margin:0'>{int(row['가용'])}</p>",
             unsafe_allow_html=True,
         )
-        c2.metric("미사용", int(row["미사용"]))
-        c3.metric("고장", int(row["고장"]))
-        c4.metric("폐기", int(row["폐기"]))
+        c2.metric("대여중", int(row["대여중"]))
+        c3.metric("미사용", int(row["미사용"]))
+        c4.metric("고장", int(row["고장"]))
+        c5.metric("폐기", int(row["폐기"]))
 
         status_order = {"가용": 0, "미사용": 1, "고장": 2, "폐기": 3}
         model_df = (
@@ -51,7 +52,7 @@ for tab, model in zip(tabs, models):
             owner_opts = ["전체"] + sorted(model_active["소유자"].dropna().unique().tolist())
             owner_filter = fc2.selectbox("소유자", owner_opts, key=f"filter_owner_{model}")
             status_filter = fc3.selectbox(
-                "상태", ["가용", "고장", "미사용", "전체"], index=0, key=f"filter_status_{model}"
+                "상태", ["가용", "대여중", "고장", "미사용", "전체"], index=0, key=f"filter_status_{model}"
             )
             search = st.text_input(
                 "검색", placeholder="시리얼번호, 소유자, 비고 등 전체 검색", key=f"search_{model}"

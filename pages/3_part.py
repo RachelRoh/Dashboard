@@ -58,20 +58,22 @@ for tab, team in zip(tabs, teams):
             pending_df[pending_df["팀"] == team].reset_index(drop=True)
         )
 
-        cnt_avail   = len(team_all[team_all["상태"] == "가용"])
-        cnt_unused  = len(team_pending[team_pending["사유"] == "미사용"])
-        cnt_broken  = len(team_pending[team_pending["사유"] == "고장"])
-        cnt_disposed = len(team_all) - cnt_avail - cnt_unused - cnt_broken
+        cnt_avail    = len(team_all[(team_all["상태"] == "가용") & (team_all["disposed"] == 0)])
+        cnt_rented   = len(team_all[(team_all["상태"] == "대여중") & (team_all["disposed"] == 0)])
+        cnt_unused   = len(team_pending[team_pending["사유"] == "미사용"])
+        cnt_broken   = len(team_pending[team_pending["사유"] == "고장"])
+        cnt_disposed = len(team_all[team_all["disposed"] == 1])
 
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns(5)
         c1.markdown(
             "<p style='font-size:.875rem;margin-bottom:0'>가용</p>"
             f"<p style='font-size:2rem;font-weight:700;color:#FF4B4B;margin:0'>{cnt_avail}</p>",
             unsafe_allow_html=True,
         )
-        c2.metric("미사용", cnt_unused)
-        c3.metric("고장", cnt_broken)
-        c4.metric("폐기", cnt_disposed)
+        c2.metric("대여중", cnt_rented)
+        c3.metric("미사용", cnt_unused)
+        c4.metric("고장", cnt_broken)
+        c5.metric("폐기", cnt_disposed)
         st.markdown("<br><br>", unsafe_allow_html=True)
         with st.container(border=True):
             fc1, fc2, fc3 = st.columns(3)
@@ -80,7 +82,7 @@ for tab, team in zip(tabs, teams):
             owner_opts = ["전체"] + sorted(team_active["소유자"].dropna().unique().tolist())
             owner_filter = fc2.selectbox("소유자", owner_opts, key=f"filter_owner_{team}")
             status_filter = fc3.selectbox(
-                "상태", ["가용", "고장", "미사용", "전체"], index=0, key=f"filter_status_{team}"
+                "상태", ["가용", "대여중", "고장", "미사용", "전체"], index=0, key=f"filter_status_{team}"
             )
             search = st.text_input(
                 "검색", placeholder="모델, 시리얼번호, 소유자, 비고 등 전체 검색", key=f"search_{team}"

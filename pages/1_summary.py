@@ -13,22 +13,24 @@ st.title("📊 단말 현황 요약")
 df = get_model_summary()
 
 # ── KPI 메트릭 ──────────────────────────────────────────────
-total  = int(df["전체"].sum())
-avail  = int(df["가용"].sum())
-unused = int(df["미사용"].sum())
-broken = int(df["고장"].sum())
+total    = int(df["전체"].sum())
+avail    = int(df["가용"].sum())
+rented   = int(df["대여중"].sum())
+unused   = int(df["미사용"].sum())
+broken   = int(df["고장"].sum())
 disposed = int(df["폐기"].sum())
 
-c1, c2, c3, c4, c5 = st.columns(5)
+c1, c2, c3, c4, c5, c6 = st.columns(6)
 c1.metric("총 단말 수", total)
 c2.markdown(
     "<p style='font-size:.875rem;margin-bottom:0'>가용</p>"
     f"<p style='font-size:2rem;font-weight:700;color:#FF4B4B;margin:0'>{avail}</p>",
     unsafe_allow_html=True,
 )
-c3.metric("미사용", unused)
-c4.metric("고장", broken)
-c5.metric("폐기", disposed)
+c3.metric("대여중", rented)
+c4.metric("미사용", unused)
+c5.metric("고장", broken)
+c6.metric("폐기", disposed)
 
 st.divider()
 

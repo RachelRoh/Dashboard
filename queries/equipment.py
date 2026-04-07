@@ -6,8 +6,9 @@ from db.database import get_conn
 
 STATUS_KR = {
     "available": "가용",
-    "broken": "고장",
-    "retired": "미사용",
+    "rented":    "대여중",
+    "broken":    "고장",
+    "retired":   "미사용",
 }
 
 
@@ -22,6 +23,8 @@ def get_model_summary() -> pd.DataFrame:
                 COUNT(*) AS 전체,
                 SUM(e.status = 'available'
                     AND (e.disposed IS NULL OR e.disposed = 0)) AS 가용,
+                SUM(e.status = 'rented'
+                    AND (e.disposed IS NULL OR e.disposed = 0)) AS 대여중,
                 SUM(e.status = 'retired'
                     AND (e.disposed IS NULL OR e.disposed = 0)) AS 미사용,
                 SUM(e.status = 'broken'

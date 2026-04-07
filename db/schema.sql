@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS equipment (
     model_id   INTEGER NOT NULL REFERENCES models(id),
     serial_no  TEXT UNIQUE,
     status     TEXT NOT NULL DEFAULT 'available'
-                   CHECK(status IN ('available','broken','retired')),
+                   CHECK(status IN ('available','broken','retired','rented')),
     team_id    INTEGER REFERENCES teams(id),
     reg_no      TEXT DEFAULT '',
     owner       TEXT DEFAULT '',

@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 
 from db.database import get_conn
+from queries.equipment import _clear_equipment_cache
 
 
 @st.cache_data(ttl=300)
@@ -67,8 +68,13 @@ def add_rental(
             " VALUES(?,?,?,?)",
             (equipment_id, team_id, borrower_name, expected_return),
         )
+        conn.execute(
+            "UPDATE equipment SET status='rented' WHERE id=?",
+            (equipment_id,),
+        )
     get_active_rentals.clear()
     get_rental_history.clear()
+    _clear_equipment_cache()
 
 
 def return_rental(rental_id: int, equipment_id: int):
@@ -79,5 +85,10 @@ def return_rental(rental_id: int, equipment_id: int):
             " WHERE id=?",
             (rental_id,),
         )
+        conn.execute(
+            "UPDATE equipment SET status='available' WHERE id=?",
+            (equipment_id,),
+        )
     get_active_rentals.clear()
     get_rental_history.clear()
+    _clear_equipment_cache()
