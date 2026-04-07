@@ -36,3 +36,9 @@ with col2:
         "**📒 대여 현황**\n\n"
         "현재 대여 중인 단말 목록, 전체 대여 이력 조회 및 신규 대여 등록을 처리합니다."
     )
+
+st.markdown("<br><br><br><br>", unsafe_allow_html=True)
+st.markdown(
+    "<p style='text-align:center; color:gray; font-size:0.8rem'>이것은 캡션</p>",
+    unsafe_allow_html=True,
+)
