@@ -5,12 +5,54 @@ import streamlit as st
 from queries.equipment import (
     get_equipment_by_team, get_all_equipment,
     get_models, get_teams, add_equipment, remove_equipment,
-    get_disposal_pending,
+    get_disposal_pending, add_model, hard_delete_equipment,
 )
 
 STATUS_KR = {"available": "가용", "broken": "고장", "retired": "폐기"}
 STATUS_EN = {v: k for k, v in STATUS_KR.items()}
 REMOVE_REASONS = ["이관", "미사용", "고장"]
+
+
+@st.dialog("모델 생성하기")
+def _show_create_model_dialog():
+    terminal_type = st.selectbox(
+        "단말 종류", ["E단말", "M단말"], key="dlg_terminal_type"
+    )
+
+    if terminal_type == "E단말":
+        col1, col2 = st.columns(2)
+        with col1:
+            a_type = st.selectbox("A종류", ["A", "B", "C"], key="dlg_a_type")
+        with col2:
+            w_type = st.selectbox("W종류", ["R", "V"], key="dlg_w_type")
+        model_name = f"{a_type}_{w_type}"
+    else:
+        col1, col2 = st.columns(2)
+        with col1:
+            device_type = st.selectbox(
+                "단말타입", ["S620A", "A455A", "A465A"], key="dlg_device_type"
+            )
+        with col2:
+            device_class = st.selectbox(
+                "단말구분", ["OV1", "OV2", "CV1", "CV2"], key="dlg_device_class"
+            )
+        model_name = f"{device_type}_{device_class}"
+
+    st.divider()
+    st.markdown(f"**생성될 모델명:** `{model_name}`")
+
+    existing = get_models()["name"].tolist()
+    already_exists = model_name in existing
+    if already_exists:
+        st.warning(f"'{model_name}' 모델이 이미 존재합니다.")
+
+    if st.button(
+        "생성하기", type="primary", disabled=already_exists, key="dlg_create_btn"
+    ):
+        add_model(model_name)
+        st.session_state["_new_model_name"] = model_name
+        st.rerun()
+
 
 @st.dialog("삭제 완료!")
 def _show_delete_done():
@@ -109,8 +151,26 @@ for tab, team in zip(tabs, teams):
         st.markdown("<br><br>", unsafe_allow_html=True)
         # ── 단말 추가 ───────────────────────────────────────
         with st.expander("➕ 단말 추가", expanded=False):
+            model_keys = list(model_map.keys())
+            new_model = st.session_state.get("_new_model_name")
+            default_idx = (
+                model_keys.index(new_model)
+                if new_model and new_model in model_keys
+                else 0
+            )
+            mc1, mc2 = st.columns([4, 1], vertical_alignment="bottom")
+            with mc1:
+                st.selectbox(
+                    "모델 *", model_keys, index=default_idx,
+                    key=f"sel_model_{team}",
+                )
+            with mc2:
+                if st.button(
+                    "🆕 모델 생성하기", key=f"create_model_btn_{team}",
+                ):
+                    _show_create_model_dialog()
+
             with st.form(f"add_form_{team}", clear_on_submit=True):
-                sel_model = st.selectbox("모델 *", list(model_map.keys()))
                 col1, col2 = st.columns(2)
                 with col1:
                     serial_no = st.text_input("시리얼 넘버")
@@ -118,26 +178,34 @@ for tab, team in zip(tabs, teams):
                     owner = st.text_input("소유자")
                 col3, col4 = st.columns(2)
                 with col3:
-                    registered_at = st.date_input("등록일시", value=datetime.date.today())
+                    registered_at = st.date_input(
+                        "등록일시", value=datetime.date.today()
+                    )
                 with col4:
                     notes = st.text_input("비고")
                 submitted = st.form_submit_button("추가", type="primary")
 
             if submitted:
-                add_equipment(
-                    model_id=model_map[sel_model],
-                    serial_no=serial_no.strip(),
-                    status="available",
-                    team_id=team_id_map[team],
-                    owner=owner.strip(),
-                    registered_at=registered_at.isoformat(),
-                    notes=notes.strip(),
-                )
-                st.success(
-                    f"단말 추가 완료: {sel_model}"
-                    f" ({serial_no or '시리얼 없음'}) — {team}"
-                )
-                st.rerun()
+                sel_model = st.session_state.get(f"sel_model_{team}", "")
+                try:
+                    add_equipment(
+                        model_id=model_map[sel_model],
+                        serial_no=serial_no.strip(),
+                        status="available",
+                        team_id=team_id_map[team],
+                        owner=owner.strip(),
+                        registered_at=registered_at.isoformat(),
+                        notes=notes.strip(),
+                    )
+                except ValueError as e:
+                    st.error(str(e))
+                else:
+                    st.session_state.pop("_new_model_name", None)
+                    st.success(
+                        f"단말 추가 완료: {sel_model}"
+                        f" ({serial_no or '시리얼 없음'}) — {team}"
+                    )
+                    st.rerun()
 
         # ── CSV 일괄 추가 ────────────────────────────────────
         with st.expander("➕ CSV로 일괄 추가", expanded=False):
@@ -231,6 +299,40 @@ for tab, team in zip(tabs, teams):
                             "폐기 예정 목록으로 이동되었습니다."
                         )
                         st.rerun()
+
+        # ── 잘못 추가한 단말 완전 삭제 ──────────────────────
+        with st.expander("🗑️ 잘못 추가한 단말 완전 삭제", expanded=False):
+            st.caption("대여 이력이 없는 단말만 삭제할 수 있습니다. 삭제 후 복구할 수 없습니다.")
+            if deletable.empty:
+                st.info("삭제 가능한 단말이 없습니다.")
+            else:
+                n2 = st.session_state.get(f"hd_reset_{team}", 0)
+                hd_labels = [
+                    f"{r['모델']} — {r['시리얼번호']}"
+                    for _, r in deletable.iterrows()
+                ]
+                sel_hd = st.selectbox(
+                    "단말 선택",
+                    [""] + hd_labels,
+                    format_func=lambda x: "선택하세요" if x == "" else x,
+                    key=f"hd_eq_{team}_{n2}",
+                )
+                confirmed = st.checkbox(
+                    "삭제를 확인합니다 (복구 불가)",
+                    key=f"hd_confirm_{team}_{n2}",
+                )
+                if sel_hd and confirmed and st.button(
+                    "완전 삭제", key=f"hd_btn_{team}", type="primary"
+                ):
+                    hd_idx = hd_labels.index(sel_hd)
+                    eq_id = int(deletable.iloc[hd_idx]["id"])
+                    try:
+                        hard_delete_equipment(eq_id)
+                        st.session_state[f"hd_reset_{team}"] = n2 + 1
+                        st.success(f"삭제 완료: {sel_hd}")
+                        st.rerun()
+                    except ValueError as e:
+                        st.error(str(e))
 
         # ── 폐기 예정 ───────────────────────────────────────
         with st.expander(f"🗂️ 폐기 예정 ({len(team_pending)}건)", expanded=False):

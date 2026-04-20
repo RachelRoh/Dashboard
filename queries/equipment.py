@@ -1,4 +1,5 @@
 import datetime
+import sqlite3
 import pandas as pd
 import streamlit as st
 
@@ -117,15 +118,18 @@ def add_equipment(
 ):
     if not registered_at:
         registered_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with get_conn() as conn:
-        conn.execute(
-            "INSERT INTO equipment"
-            "(model_id, serial_no, status, team_id,"
-            " notes, owner, registered_at)"
-            " VALUES(?,?,?,?,?,?,?)",
-            (model_id, serial_no or None, status, team_id,
-             notes, owner, registered_at),
-        )
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "INSERT INTO equipment"
+                "(model_id, serial_no, status, team_id,"
+                " notes, owner, registered_at)"
+                " VALUES(?,?,?,?,?,?,?)",
+                (model_id, serial_no or None, status, team_id,
+                 notes, owner, registered_at),
+            )
+    except sqlite3.IntegrityError:
+        raise ValueError(f"시리얼 번호 '{serial_no}'는 이미 등록되어 있습니다.")
     _clear_equipment_cache()
 
 
@@ -220,9 +224,6 @@ def dispose_equipment(equipment_id: int):
     """폐기 처리 → disposed=1 마킹"""
     with get_conn() as conn:
         conn.execute(
-            "DELETE FROM rentals WHERE equipment_id=?", (equipment_id,)
-        )
-        conn.execute(
             "UPDATE equipment"
             " SET disposed=1,"
             " disposed_at=datetime('now','localtime')"
@@ -231,6 +232,19 @@ def dispose_equipment(equipment_id: int):
         )
     get_disposal_pending.clear()
     get_disposal_done.clear()
+    _clear_equipment_cache()
+
+
+def hard_delete_equipment(equipment_id: int):
+    """잘못 추가한 단말 완전 삭제 — 대여 이력이 없는 경우에만 허용"""
+    with get_conn() as conn:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM rentals WHERE equipment_id=?",
+            (equipment_id,)
+        ).fetchone()[0]
+        if count > 0:
+            raise ValueError("대여 이력이 있는 단말은 삭제할 수 없습니다.")
+        conn.execute("DELETE FROM equipment WHERE id=?", (equipment_id,))
     _clear_equipment_cache()
 
 
@@ -246,6 +260,13 @@ def restore_equipment(equipment_id: int):
     get_disposal_pending.clear()
     get_disposal_done.clear()
     _clear_equipment_cache()
+
+
+def add_model(name: str):
+    with get_conn() as conn:
+        conn.execute("INSERT OR IGNORE INTO models(name) VALUES(?)", (name,))
+    get_models.clear()
+    get_model_summary.clear()
 
 
 def _clear_equipment_cache():

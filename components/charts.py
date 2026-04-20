@@ -9,13 +9,27 @@ STATUS_COLORS = {
 }
 
 
+PASTEL_COLORS = [
+    "#FFCDD2",  # 핑크
+    "#BBDEFB",  # 파랑
+    "#FFF9C4",  # 노랑
+    "#C8E6C9",  # 초록
+    "#F8BBD0",  # 로즈
+    "#B2EBF2",  # 하늘
+    "#FFECB3",  # 앰버
+    "#E1BEE7",  # 보라
+    "#DCEDC8",  # 연두
+    "#FFE0B2",  # 복숭아
+]
+
+
 def pie_model_total(df: pd.DataFrame):
     """모델별 전체 수량 파이 차트"""
     fig = px.pie(
         df,
         names="모델",
         values="전체",
-        color_discrete_sequence=["#FFCDD2", "#C8E6C9", "#BBDEFB", "#FFF9C4", "#E1BEE7", "#B2EBF2"],
+        color_discrete_sequence=PASTEL_COLORS,
         hole=0.35,
     )
     fig.update_traces(textposition="inside", textinfo="percent+label")
