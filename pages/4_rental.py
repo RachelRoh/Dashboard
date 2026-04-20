@@ -140,16 +140,27 @@ with tab_new:
             for _, r in avail_df.iterrows()
         ]
 
-        with st.form("rental_form"):
-            sel_eq = st.selectbox("단말 선택", eq_labels)
-            sel_team = st.selectbox("대여 팀", list(team_map.keys()))
+        form_ver = st.session_state.get("rental_form_ver", 0)
+        with st.form(f"rental_form_{form_ver}"):
+            sel_eq = st.selectbox("단말 선택", [""] + eq_labels)
+            sel_team = st.selectbox("대여 팀", [""] + list(team_map.keys()))
             borrower = st.text_input("대여자 이름")
-            exp_return = st.date_input("반납 예정일", value=date.today())
+            exp_return = st.date_input("반납 예정일", value=None)
             submitted = st.form_submit_button("대여 등록")
 
         if submitted:
+            errors = []
+            if not sel_eq:
+                errors.append("단말을 선택하세요.")
+            if not sel_team:
+                errors.append("대여 팀을 선택하세요.")
             if not borrower.strip():
-                st.error("대여자 이름을 입력하세요.")
+                errors.append("대여자 이름을 입력하세요.")
+            if exp_return is None:
+                errors.append("반납 예정일을 선택하세요.")
+            if errors:
+                for msg in errors:
+                    st.error(msg)
             else:
                 eq_idx = eq_labels.index(sel_eq)
                 eq_row = avail_df.iloc[eq_idx]
@@ -165,7 +176,9 @@ with tab_new:
                     expected_return=str(exp_return),
                 )
                 get_all_equipment.clear()
-                st.success(
-                    f"대여 등록 완료: {eq_row['모델']} -> {borrower} ({sel_team})"
-                )
+                st.session_state["rental_form_ver"] = form_ver + 1
+                st.session_state["rental_success"] = f"대여 등록 완료: {eq_row['모델']} → {borrower} ({sel_team})"
                 st.rerun()
+
+        if "rental_success" in st.session_state:
+            st.success(st.session_state.pop("rental_success"))
