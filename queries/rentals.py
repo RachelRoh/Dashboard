@@ -77,6 +77,16 @@ def add_rental(
     _clear_equipment_cache()
 
 
+def extend_rental(rental_id: int, new_expected_return: str):
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE rentals SET expected_return=? WHERE id=?",
+            (new_expected_return, rental_id),
+        )
+    get_active_rentals.clear()
+    get_rental_history.clear()
+
+
 def return_rental(rental_id: int, equipment_id: int):
     with get_conn() as conn:
         conn.execute(

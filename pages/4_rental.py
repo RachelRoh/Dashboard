@@ -2,10 +2,26 @@ import streamlit as st
 from datetime import date
 
 from queries.rentals import (
-    get_active_rentals, get_rental_history, add_rental, return_rental
+    get_active_rentals, get_rental_history, add_rental, return_rental, extend_rental
 )
 from queries.equipment import get_all_equipment
 from db.database import get_conn
+
+@st.dialog("반납 확인")
+def confirm_return_dialog(items: list):
+    # items: list of (rental_id, equipment_id, model, serial)
+    st.markdown(f"**{len(items)}개** 단말을 반납 처리하시겠습니까?")
+    for _, _, model, serial in items:
+        st.markdown(f"- {model} ({serial})")
+    col_ok, col_cancel = st.columns(2)
+    if col_ok.button("확인", type="primary", use_container_width=True):
+        for rental_id, equipment_id, _, _ in items:
+            return_rental(rental_id, equipment_id)
+        st.session_state["return_success"] = f"반납 완료: {len(items)}개"
+        st.rerun()
+    if col_cancel.button("취소", use_container_width=True):
+        st.rerun()
+
 
 _, _btn_col = st.columns([8, 2])
 with _btn_col:
@@ -34,35 +50,59 @@ with tab_active:
                 return ["background-color: #FFEBEE"] * len(row)
             return [""] * len(row)
 
-        st.markdown(f"**총 {len(active_df)}건** (🔴 : 반납 연체)")
+        st.markdown(f"**총 {len(active_df)}건** (🔴 : 반납 연체) — 행을 클릭하여 선택하세요")
         display_cols = ["모델", "시리얼번호", "대여팀", "대여자", "대여일시", "반납예정일"]
-        st.dataframe(
+        event = st.dataframe(
             active_df[display_cols].style.apply(highlight_overdue, axis=1),
             width='stretch',
             hide_index=True,
+            on_select="rerun",
+            selection_mode="multi-row",
         )
 
-        st.divider()
-        st.subheader("반납 처리")
-        labels = [
-            f"{r['모델']} ({r['시리얼번호']}) - {r['대여자']}"
-            for _, r in active_df.iterrows()
-        ]
-        selected_label = st.selectbox("반납할 단말 선택", labels)
-        idx = labels.index(selected_label)
-        selected_rental = active_df.iloc[idx]
+        selected_rows = event.selection.rows
+        if selected_rows:
+            selected_rentals = active_df.iloc[selected_rows]
+            count = len(selected_rows)
+            st.divider()
+            st.markdown(f"**{count}개 선택됨**")
 
-        if st.button("반납 처리"):
-            with get_conn() as conn:
-                row = conn.execute(
-                    "SELECT id FROM equipment WHERE serial_no=?",
-                    (selected_rental["시리얼번호"],)
-                ).fetchone()
-            return_rental(int(selected_rental["대여ID"]), row["id"])
-            get_active_rentals.clear()
-            serial = selected_rental["시리얼번호"]
-            st.success(f"반납 완료: {selected_rental['모델']} ({serial})")
-            st.rerun()
+            btn_return, btn_extend = st.columns(2)
+
+            if btn_return.button(f"✅ 반납 처리 ({count}개)", use_container_width=True, type="primary"):
+                with get_conn() as conn:
+                    items = [
+                        (
+                            int(r["대여ID"]),
+                            conn.execute(
+                                "SELECT id FROM equipment WHERE serial_no=?",
+                                (r["시리얼번호"],)
+                            ).fetchone()["id"],
+                            r["모델"],
+                            r["시리얼번호"],
+                        )
+                        for _, r in selected_rentals.iterrows()
+                    ]
+                confirm_return_dialog(items)
+
+            if "return_success" in st.session_state:
+                st.success(st.session_state.pop("return_success"))
+                st.rerun()
+
+            with btn_extend.popover(f"📅 반납 연장 ({count}개)", use_container_width=True):
+                earliest = selected_rentals["반납예정일"][selected_rentals["반납예정일"] != ""].min()
+                new_date = st.date_input(
+                    "새 반납 예정일 (선택된 전체 적용)",
+                    value=date.fromisoformat(earliest) if earliest else date.today(),
+                    key="extend_date",
+                )
+                if st.button("연장 확정", type="primary"):
+                    for _, r in selected_rentals.iterrows():
+                        extend_rental(int(r["대여ID"]), str(new_date))
+                    st.success(f"{count}개 연장 완료 → {new_date}")
+                    st.rerun()
+        else:
+            st.caption("행을 클릭하면 반납 처리 / 반납 연장 버튼이 나타납니다.")
 
 # ── 대여 이력 ───────────────────────────────────────────────
 with tab_history:
