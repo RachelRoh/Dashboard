@@ -89,9 +89,17 @@ if teams_df.empty:
 
 teams = sorted(teams_df["name"].tolist())
 team_id_map = dict(zip(teams_df["name"], teams_df["id"]))
-tabs = st.tabs(teams)
 
-for tab, team in zip(tabs, teams):
+USE_TABS_THRESHOLD = 6
+
+if len(teams) <= USE_TABS_THRESHOLD:
+    tabs = st.tabs(teams)
+    _tab_iter = zip(tabs, teams)
+else:
+    selected_team = st.selectbox("팀 선택", teams)
+    _tab_iter = [(st.container(), selected_team)]
+
+for tab, team in _tab_iter:
     with tab:
         team_all = all_df[all_df["보유팀"] == team].reset_index(drop=True)
         team_active = team_all[team_all["disposed"] == 0].reset_index(drop=True)

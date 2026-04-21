@@ -18,9 +18,17 @@ if summary_df.empty:
     st.stop()
 
 models = summary_df["모델"].tolist()
-tabs = st.tabs(models)
 
-for tab, model in zip(tabs, models):
+USE_TABS_THRESHOLD = 6
+
+if len(models) <= USE_TABS_THRESHOLD:
+    tabs = st.tabs(models)
+    _tab_iter = zip(tabs, models)
+else:
+    selected_model = st.selectbox("모델 선택", models)
+    _tab_iter = [(st.container(), selected_model)]
+
+for tab, model in _tab_iter:
     with tab:
         row = summary_df[summary_df["모델"] == model].iloc[0]
 
