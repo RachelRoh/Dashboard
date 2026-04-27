@@ -18,5 +18,6 @@ pg = st.navigation([
     st.Page("pages/3_part.py",               title="파트별 현황",   icon="👥"),
     st.Page("pages/4_rental.py",             title="대여 현황",     icon="📒"),
     st.Page("pages/5_disposal.py",           title="폐기 현황",     icon="🗑️"),
+    st.Page("pages/6_members.py",            title="멤버 관리",     icon="👤"),
 ])
 pg.run()

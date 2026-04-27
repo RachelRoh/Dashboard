@@ -85,6 +85,14 @@ def init():
         ],
     )
 
+    # 샘플 멤버
+    members = [
+        ("홍길동",), ("이순신",), ("강감찬",), ("유관순",), ("김유신",),
+        ("세종대왕",), ("을지문덕",), ("장보고",), ("신사임당",), ("이황",),
+        ("이이",), ("정약용",), ("김정호",), ("허준",), ("최무선",),
+    ]
+    conn.executemany("INSERT OR IGNORE INTO members(name) VALUES(?)", members)
+
     conn.commit()
     conn.close()
     print("DB 초기화 완료:", DB_PATH)

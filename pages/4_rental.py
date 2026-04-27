@@ -5,6 +5,7 @@ from queries.rentals import (
     get_active_rentals, get_rental_history, add_rental, return_rental, extend_rental
 )
 from queries.equipment import get_all_equipment
+from queries.members import get_members
 from db.database import get_conn
 
 @st.dialog("반납 확인")
@@ -140,11 +141,17 @@ with tab_new:
             for _, r in avail_df.iterrows()
         ]
 
+        members_list = get_members()["name"].tolist()
+
         form_ver = st.session_state.get("rental_form_ver", 0)
         with st.form(f"rental_form_{form_ver}"):
             sel_eq = st.selectbox("단말 선택", [""] + eq_labels)
             sel_team = st.selectbox("대여 팀", [""] + list(team_map.keys()))
-            borrower = st.text_input("대여자 이름")
+            borrower = st.selectbox(
+                "대여자",
+                [""] + members_list,
+                format_func=lambda x: "선택하세요" if x == "" else x,
+            )
             exp_return = st.date_input("반납 예정일", value=None)
             submitted = st.form_submit_button("대여 등록")
 
@@ -154,8 +161,8 @@ with tab_new:
                 errors.append("단말을 선택하세요.")
             if not sel_team:
                 errors.append("대여 팀을 선택하세요.")
-            if not borrower.strip():
-                errors.append("대여자 이름을 입력하세요.")
+            if not borrower:
+                errors.append("대여자를 선택하세요.")
             if exp_return is None:
                 errors.append("반납 예정일을 선택하세요.")
             if errors:

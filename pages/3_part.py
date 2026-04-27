@@ -7,6 +7,7 @@ from queries.equipment import (
     get_models, get_teams, add_equipment, remove_equipment,
     get_disposal_pending, add_model, hard_delete_equipment,
 )
+from queries.members import get_members
 
 STATUS_KR = {"available": "가용", "broken": "고장", "retired": "폐기"}
 STATUS_EN = {v: k for k, v in STATUS_KR.items()}
@@ -82,6 +83,7 @@ teams_df = get_teams()
 models_df = get_models()
 model_map = dict(zip(models_df["name"], models_df["id"]))
 pending_df = get_disposal_pending()
+members_list = get_members()["name"].tolist()
 
 if teams_df.empty:
     st.warning("등록된 팀이 없습니다.")
@@ -183,7 +185,12 @@ for tab, team in _tab_iter:
                 with col1:
                     serial_no = st.text_input("시리얼 넘버")
                 with col2:
-                    owner = st.text_input("소유자")
+                    owner = st.selectbox(
+                        "소유자",
+                        [""] + members_list,
+                        format_func=lambda x: "선택 안함" if x == "" else x,
+                        key=f"owner_{team}",
+                    )
                 col3, col4 = st.columns(2)
                 with col3:
                     registered_at = st.date_input(
@@ -280,7 +287,22 @@ for tab, team in _tab_iter:
                             f"{invalid_models['모델'].unique().tolist()}  \n"
                             f"등록된 모델: {list(model_map.keys())}"
                         )
-                    valid_df = paste_df[paste_df["모델"].isin(model_map.keys())].reset_index(drop=True)
+                    valid_df = paste_df[paste_df["모델"].isin(model_map.keys())].copy()
+
+                    invalid_owners = valid_df[
+                        valid_df["소유자"].str.strip().ne("") &
+                        ~valid_df["소유자"].isin(members_list)
+                    ]
+                    if not invalid_owners.empty:
+                        st.warning(
+                            f"등록되지 않은 소유자가 있어 제외됩니다: "
+                            f"{invalid_owners['소유자'].unique().tolist()}  \n"
+                            f"등록된 멤버: {members_list}"
+                        )
+                    valid_df = valid_df[
+                        valid_df["소유자"].str.strip().eq("") |
+                        valid_df["소유자"].isin(members_list)
+                    ].reset_index(drop=True)
 
                     if valid_df.empty:
                         st.error("추가 가능한 행이 없습니다. 모델명을 확인하세요.")

@@ -20,6 +20,12 @@ def _migrate():
     conn = sqlite3.connect(DB_PATH)
     try:
         _migrate_rented_status(conn)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS members (
+                id   INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL UNIQUE
+            )
+        """)
         for table, col_name, col_def in _iter_missing_columns(conn):
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}")
         _sync_rented_status(conn)
