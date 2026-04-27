@@ -30,6 +30,11 @@ def _migrate():
 
 def _sync_rented_status(conn):
     """기존 활성 대여 건의 equipment status를 'rented'로 동기화"""
+    exists = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='equipment'"
+    ).fetchone()
+    if not exists:
+        return
     conn.execute("""
         UPDATE equipment SET status = 'rented'
         WHERE id IN (
