@@ -215,31 +215,79 @@ for tab, team in _tab_iter:
                     )
                     st.rerun()
 
-        # ── CSV 일괄 추가 ────────────────────────────────────
-        with st.expander("➕ CSV로 일괄 추가", expanded=False):
-            st.caption("모델, 시리얼번호, 소유자, 등록일시, 비고 컬럼을 포함한 CSV 파일을 업로드하세요.")
-            uploaded = st.file_uploader(
-                "CSV 파일 선택", type="csv", key=f"csv_{team}"
+        # ── 일괄 추가 (엑셀 붙여넣기) ───────────────────────
+        with st.expander("➕ 일괄 추가 (엑셀 붙여넣기)", expanded=False):
+            # 양식 다운로드
+            _tpl_cols = ["모델", "시리얼번호", "소유자", "등록일시", "비고"]
+            _tpl_df = pd.DataFrame(
+                [["(예시) " + list(model_map.keys())[0], "SN-0001", "홍길동",
+                  datetime.date.today().isoformat(), ""]],
+                columns=_tpl_cols,
             )
-            if uploaded:
+            _tpl_buf = io.BytesIO()
+            with pd.ExcelWriter(_tpl_buf, engine="openpyxl") as _writer:
+                _tpl_df.to_excel(_writer, index=False, sheet_name="양식")
+                _ws = _writer.sheets["양식"]
+                for _col in _ws.iter_cols(min_row=1, max_row=1):
+                    _ws.column_dimensions[_col[0].column_letter].width = 20
+            _tpl_buf.seek(0)
+
+            dl_col, info_col = st.columns([2, 5])
+            with dl_col:
+                st.download_button(
+                    "📥 양식 다운로드 (.xlsx)",
+                    data=_tpl_buf,
+                    file_name="단말_일괄추가_양식.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key=f"tpl_dl_{team}",
+                )
+            with info_col:
+                st.caption(
+                    "① 양식을 다운로드해 엑셀로 작성하세요.  "
+                    "② 헤더 포함 전체 셀을 선택·복사(Ctrl+C)하세요.  "
+                    "③ 아래 입력창에 붙여넣기(Ctrl+V)하세요."
+                )
+
+            paste_raw = st.text_area(
+                "여기에 붙여넣기 (엑셀에서 복사한 표)",
+                height=200,
+                placeholder="모델\t시리얼번호\t소유자\t등록일시\t비고\nA_R\tSN-0001\t홍길동\t2024-01-01\t",
+                key=f"paste_{team}",
+            )
+
+            if paste_raw and paste_raw.strip():
                 try:
-                    csv_df = pd.read_csv(io.BytesIO(uploaded.read()))
-                    required = {"모델"}
-                    if not required.issubset(csv_df.columns):
-                        st.error("CSV에 '모델' 컬럼이 없습니다.")
+                    lines = [
+                        ln for ln in paste_raw.replace("\r\n", "\n").split("\n")
+                        if ln.strip()
+                    ]
+                    rows = [ln.split("\t") for ln in lines]
+                    # 첫 행이 헤더인지 확인 (모델 컬럼 포함 여부)
+                    if "모델" in rows[0]:
+                        header = rows[0]
+                        data_rows = rows[1:]
                     else:
-                        csv_df = csv_df.fillna("")
-                        invalid = csv_df[~csv_df["모델"].isin(model_map.keys())]
-                        if not invalid.empty:
-                            st.warning(
-                                f"알 수 없는 모델명이 있어 제외됩니다: "
-                                f"{invalid['모델'].unique().tolist()}"
-                            )
-                        valid_df = csv_df[csv_df["모델"].isin(model_map.keys())]
+                        header = _tpl_cols
+                        data_rows = rows
+
+                    paste_df = pd.DataFrame(data_rows, columns=header[:len(data_rows[0])] if data_rows else header)
+                    paste_df = paste_df.reindex(columns=_tpl_cols).fillna("")
+
+                    invalid_models = paste_df[~paste_df["모델"].isin(model_map.keys())]
+                    if not invalid_models.empty:
+                        st.warning(
+                            f"알 수 없는 모델명이 있어 제외됩니다: "
+                            f"{invalid_models['모델'].unique().tolist()}  \n"
+                            f"등록된 모델: {list(model_map.keys())}"
+                        )
+                    valid_df = paste_df[paste_df["모델"].isin(model_map.keys())].reset_index(drop=True)
+
+                    if valid_df.empty:
+                        st.error("추가 가능한 행이 없습니다. 모델명을 확인하세요.")
+                    else:
                         st.dataframe(valid_df, hide_index=True, width="stretch")
-                        if not valid_df.empty and st.button(
-                            "일괄 추가", type="primary", key=f"csv_submit_{team}"
-                        ):
+                        st.caption(f"총 {len(valid_df)}개 행 인식됨")
+                        if st.button("일괄 추가", type="primary", key=f"paste_submit_{team}"):
                             for _, r in valid_df.iterrows():
                                 add_equipment(
                                     model_id=model_map[r["모델"]],
@@ -253,7 +301,7 @@ for tab, team in _tab_iter:
                             st.success(f"{len(valid_df)}개 단말 추가 완료")
                             st.rerun()
                 except Exception as e:
-                    st.error(f"CSV 읽기 오류: {e}")
+                    st.error(f"데이터 파싱 오류: {e}")
 
         # ── 단말 삭제 ───────────────────────────────────────
         with st.expander("🗑️ 단말 삭제", expanded=False):
