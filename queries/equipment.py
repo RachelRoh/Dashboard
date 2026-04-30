@@ -262,6 +262,31 @@ def restore_equipment(equipment_id: int):
     _clear_equipment_cache()
 
 
+def update_equipment(
+    equipment_id: int,
+    model_id: int,
+    serial_no: str,
+    team_id: int,
+    owner: str,
+    registered_at: str,
+    notes: str,
+):
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                "UPDATE equipment"
+                " SET model_id=?, serial_no=?, team_id=?, owner=?,"
+                "     registered_at=?, notes=?,"
+                "     updated_at=datetime('now','localtime')"
+                " WHERE id=?",
+                (model_id, serial_no or None, team_id, owner,
+                 registered_at, notes, equipment_id),
+            )
+    except sqlite3.IntegrityError:
+        raise ValueError(f"시리얼 번호 '{serial_no}'는 이미 등록되어 있습니다.")
+    _clear_equipment_cache()
+
+
 def add_model(name: str):
     with get_conn() as conn:
         conn.execute("INSERT OR IGNORE INTO models(name) VALUES(?)", (name,))

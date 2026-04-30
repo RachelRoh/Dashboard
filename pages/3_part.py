@@ -6,6 +6,7 @@ from queries.equipment import (
     get_equipment_by_team, get_all_equipment,
     get_models, get_teams, add_equipment, remove_equipment,
     get_disposal_pending, add_model, hard_delete_equipment,
+    update_equipment,
 )
 from queries.members import get_members
 
@@ -53,6 +54,62 @@ def _show_create_model_dialog():
         add_model(model_name)
         st.session_state["_new_model_name"] = model_name
         st.rerun()
+
+
+@st.dialog("단말 편집")
+def _show_edit_dialog(row, model_map, team_id_map, members_list):
+    import pandas as _pd
+    model_keys = list(model_map.keys())
+    current_model = row["모델"]
+    model_idx = model_keys.index(current_model) if current_model in model_keys else 0
+    new_model = st.selectbox("모델 *", model_keys, index=model_idx, key="edit_model")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        current_serial = row["시리얼번호"] if _pd.notna(row["시리얼번호"]) else ""
+        new_serial = st.text_input("시리얼번호", value=current_serial, key="edit_serial")
+    with col2:
+        current_owner = row["소유자"] if _pd.notna(row["소유자"]) else ""
+        owner_opts = [""] + members_list
+        owner_idx = owner_opts.index(current_owner) if current_owner in owner_opts else 0
+        new_owner = st.selectbox(
+            "소유자", owner_opts, index=owner_idx,
+            format_func=lambda x: "선택 안함" if x == "" else x,
+            key="edit_owner",
+        )
+
+    team_keys = list(team_id_map.keys())
+    current_team = row["보유팀"] if _pd.notna(row["보유팀"]) else team_keys[0]
+    team_idx = team_keys.index(current_team) if current_team in team_keys else 0
+    new_team = st.selectbox("보유팀", team_keys, index=team_idx, key="edit_team")
+
+    col3, col4 = st.columns(2)
+    with col3:
+        reg_str = row["등록일시"][:10] if _pd.notna(row["등록일시"]) and row["등록일시"] else datetime.date.today().isoformat()
+        try:
+            reg_date = datetime.date.fromisoformat(reg_str)
+        except (ValueError, TypeError):
+            reg_date = datetime.date.today()
+        new_reg = st.date_input("등록일시", value=reg_date, key="edit_reg")
+    with col4:
+        current_notes = row["비고"] if _pd.notna(row["비고"]) else ""
+        new_notes = st.text_input("비고", value=current_notes, key="edit_notes")
+
+    st.divider()
+    if st.button("저장", type="primary", key="edit_save"):
+        try:
+            update_equipment(
+                equipment_id=int(row["id"]),
+                model_id=model_map[new_model],
+                serial_no=new_serial.strip(),
+                team_id=team_id_map[new_team],
+                owner=new_owner.strip(),
+                registered_at=new_reg.isoformat(),
+                notes=new_notes.strip(),
+            )
+            st.rerun()
+        except ValueError as e:
+            st.error(str(e))
 
 
 @st.dialog("삭제 완료!")
@@ -221,6 +278,26 @@ for tab, team in _tab_iter:
                         f" ({serial_no or '시리얼 없음'}) — {team}"
                     )
                     st.rerun()
+
+        # ── 단말 편집 ───────────────────────────────────────
+        with st.expander("✏️ 단말 편집", expanded=False):
+            editable = team_active.reset_index(drop=True)
+            if editable.empty:
+                st.info("편집할 단말이 없습니다.")
+            else:
+                eq_edit_labels = [
+                    f"{r['모델']} — {r['시리얼번호']}"
+                    for _, r in editable.iterrows()
+                ]
+                sel_edit = st.selectbox(
+                    "단말 선택",
+                    [""] + eq_edit_labels,
+                    format_func=lambda x: "선택하세요" if x == "" else x,
+                    key=f"edit_eq_{team}",
+                )
+                if sel_edit and st.button("편집", key=f"edit_btn_{team}", type="primary"):
+                    edit_idx = eq_edit_labels.index(sel_edit)
+                    _show_edit_dialog(editable.iloc[edit_idx], model_map, team_id_map, members_list)
 
         # ── 일괄 추가 (엑셀 붙여넣기) ───────────────────────
         with st.expander("➕ 일괄 추가 (엑셀 붙여넣기)", expanded=False):
