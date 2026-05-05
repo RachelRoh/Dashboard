@@ -38,7 +38,13 @@ with col2:
     )
 
 st.markdown("<br><br><br><br>", unsafe_allow_html=True)
+
+
 st.markdown(
-    "<p style='text-align:center; color:gray; font-size:0.8rem'>이것은 캡션</p>",
+    "<p style='text-align:center; color:gray; font-size:0.8rem'>~ 캡션 ~<br>"
+    "youjeong.noh · "
+    "<a href='https://github.com/RachelRoh/Dashboard/issues' target='_blank' style='color:gray'>Feedback</a>"
+    "</p>",
     unsafe_allow_html=True,
 )
+
